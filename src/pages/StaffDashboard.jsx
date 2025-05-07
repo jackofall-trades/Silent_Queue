@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { database } from "../lib/firebase"; // Assuming Firebase is set up
-import { ref, onValue } from "firebase/database"; // Firebase Realtime Database
 
 function StaffDashboard() {
   const [patients, setPatients] = useState([]);
@@ -8,33 +6,33 @@ function StaffDashboard() {
   const [alert, setAlert] = useState("");
 
   useEffect(() => {
-    // Fetch data from Firebase
-    const patientsRef = ref(database, "patients");
-    onValue(patientsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setPatients(Object.values(data));
-      }
-    });
+    // Fetch patients and staff from backend API
+    const fetchData = async () => {
+      try {
+        const patientsRes = await fetch("http://localhost:5000/api/patients");
+        const staffRes = await fetch("http://localhost:5000/api/staff");
 
-    const staffRef = ref(database, "staff");
-    onValue(staffRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setStaff(Object.values(data));
+        const patientsData = await patientsRes.json();
+        const staffData = await staffRes.json();
+
+        setPatients(patientsData);
+        setStaff(staffData);
+      } catch (error) {
+        console.error("Failed to fetch data", error);
       }
-    });
+    };
+
+    fetchData();
   }, []);
 
-  // Calculate total patients, patients by department, etc.
   const totalPatients = patients.length;
-  const departments = [...new Set(patients.map(p => p.department))];
+  const departments = [...new Set(patients.map((p) => p.department))];
   const patientsByDepartment = departments.reduce((acc, department) => {
-    acc[department] = patients.filter(p => p.department === department).length;
+    acc[department] = patients.filter((p) => p.department === department).length;
     return acc;
   }, {});
 
-  const nextPatient = patients[0]; // Assuming the first patient is the next one
+  const nextPatient = patients[0];
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -46,7 +44,7 @@ function StaffDashboard() {
             <p className="text-sm text-gray-500">Total Patients in Queue</p>
             <p className="text-lg font-semibold">{totalPatients}</p>
           </div>
-          {departments.map(department => (
+          {departments.map((department) => (
             <div key={department}>
               <p className="text-sm text-gray-500">{`Patients in ${department}`}</p>
               <p className="text-lg font-semibold">{patientsByDepartment[department]}</p>
@@ -64,11 +62,11 @@ function StaffDashboard() {
       <div className="bg-white p-6 rounded-lg shadow-xl mb-8">
         <h2 className="text-xl font-bold text-gray-800 mb-4">Patient Information</h2>
         <div className="space-y-4">
-          {patients.map(patient => (
-            <div key={patient.id} className="p-4 border-b border-gray-200">
+          {patients.map((patient) => (
+            <div key={patient._id} className="p-4 border-b border-gray-200">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm text-gray-600">Patient ID: {patient.id}</p>
+                  <p className="text-sm text-gray-600">Patient ID: {patient._id}</p>
                   <p className="text-lg font-semibold text-gray-800">{patient.name}</p>
                   <p className="text-sm text-gray-400">{patient.department}</p>
                 </div>
@@ -89,7 +87,7 @@ function StaffDashboard() {
         <h2 className="text-xl font-bold text-gray-800 mb-4">Real-time Updates</h2>
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <p className="text-gray-500">New Arrival: {alert ? alert : "None"}</p>
+            <p className="text-gray-500">New Arrival: {alert || "None"}</p>
             <button
               onClick={() => setAlert("New critical patient arrived.")}
               className="bg-[#48ec63] text-white py-2 px-4 rounded-full hover:bg-[#32ae30]"
