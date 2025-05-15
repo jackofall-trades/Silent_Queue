@@ -49,7 +49,7 @@ const Login = () => {
           Login
         </button>
         <div className="mt-4 text-center">
-          New user? <Link to="/joinqueue" className="text-green-600 hover:underline">Sign up</Link>
+          New user? <Link to="/signup" className="text-green-600 hover:underline">Sign up</Link>
         </div>
       </form>
     </div>
